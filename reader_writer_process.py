@@ -1,13 +1,15 @@
 import threading
+import multiprocessing
 import time
 
 
 class ReadWriteLock(object):
     def __init__(self):
-        self._print_lock = threading.Lock()
-        self._lock = threading.Lock()
-        self._readGo = threading.Condition(self._lock)
-        self._writeGo = threading.Condition(self._lock)
+        manager = multiprocessing.Manager()
+        self._print_lock = manager.Lock()
+        self._lock = manager.Lock()
+        self._readGo = manager.Condition(self._lock)
+        self._writeGo = manager.Condition(self._lock)
         self._activeReaders = 0
         self._activeWriters = 0
         self._waitingReaders = 0
@@ -125,16 +127,16 @@ if __name__ == "__main__":
         lock.done_write()
 
 
-    r1 = threading.Thread(target=reader, args=(rw_lock, lst, 0))
-    w1 = threading.Thread(target=writer, args=(rw_lock, lst, 0))
-    r2 = threading.Thread(target=reader, args=(rw_lock, lst, 0))
-    # r1 = threading.Thread(target=reader, args=(rw_lock, lst, 2))
-    # w2 = threading.Thread(target=writer, args=(rw_lock, lst, 3))
-    # r2 = threading.Thread(target=reader, args=(rw_lock, lst, 4))
+    r1 = multiprocessing.Process(target=reader, args=(rw_lock, lst, 0))
+    w1 = multiprocessing.Process(target=writer, args=(rw_lock, lst, 0))
+    r2 = multiprocessing.Process(target=reader, args=(rw_lock, lst, 0))
+
     r2.start()
     w1.start()
     r1.start()
-    # w2.start()
-    # r2.start()
+
+    r2.join()
+    w1.join()
+    r1.join()
 
     # With Kendo, RW problem wont support multiple readers + 1 writer, it will be 1 reader and 1 writer
