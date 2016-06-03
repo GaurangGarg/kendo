@@ -3,7 +3,23 @@ import time
 
 
 class ReadWriteLock(object):
+    """ A lock that allows multiple readers and one writer.
+
+    Members:
+    print_lock - lock to print debug information
+    lock - lock to make ReadWriteLock operations atomic
+    readGo - Condition Variable that Readers wait on
+    writeGo - Condition Variable that Writers wait on
+    activeReaders - # of active Readers (must be >= 0)
+    activeWriters - # of active Writers (must be >= 0 and <= 1)
+    waitingReaders - # of waiting Readers (must be >= 0)
+    waitingWriters - # of waiting Writers (must be >= 0)
+
+    """
+
     def __init__(self):
+        """Initialize a ReadWriteLock."""
+
         manager = multiprocessing.Manager()
         self._print_lock = manager.Lock()
         self._lock = manager.Lock()
@@ -15,6 +31,11 @@ class ReadWriteLock(object):
         self._waitingWriters = 0
 
     def start_read(self):
+        """
+        Acquire RWLock
+        Check if ok to Read else wait on cv
+        Release RWLock
+        """
         self._print_lock.acquire()
         print "Entered start_read"
         print time.time()
@@ -34,6 +55,12 @@ class ReadWriteLock(object):
         self._lock.release()
 
     def done_read(self):
+        """
+        Acquire RWLock
+        Decrement number of activeReaders
+        Notify a waitingWriter
+        Release RWLock
+        """
         self._print_lock.acquire()
         print "Entered done_read"
         print time.time()
@@ -50,6 +77,11 @@ class ReadWriteLock(object):
         self._lock.release()
 
     def start_write(self):
+        """
+        Acquire RWLock
+        Check if ok to Write else wait on cv
+        Release RWLock
+        """
         self._print_lock.acquire()
         print "Entered start_write"
         print time.time()
@@ -69,6 +101,13 @@ class ReadWriteLock(object):
         self._lock.release()
 
     def done_write(self):
+        """
+        Acquire RWLock
+        Decrement activeWriters
+        Wake a waitingWriters if any
+        If no waitingWriters, wake a waitingReader if any
+        Release RWLock
+        """
         self._print_lock.acquire()
         print "Entered done_write"
         print time.time()
@@ -87,9 +126,15 @@ class ReadWriteLock(object):
         self._lock.release()
 
     def _read_should_wait(self):
+        """
+        Read should wait if theres any active or waiting writers
+        """
         return self._activeWriters > 0 or self._waitingWriters > 0
 
     def _write_should_wait(self):
+        """
+        Write should wait if there's any active writer or readerss
+        """
         return self._activeWriters > 0 or self._activeReaders > 0
 
     def print_state_vars(self):

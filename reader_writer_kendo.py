@@ -12,14 +12,15 @@ class RWKendo(object):
     lock_held_list - list of which locks are held/free
     shared_mem - shared memory map
     priorities - thread 'priorities' for acquiring locks
+    readers - list that keeps track of reader processes PIDs
+    writers - list that keeps track of writer processes PIDs
     """
 
     def __init__(self, max_processes, priorities=None, debug=False):
-        """Initialize a Kendo arbitrator.
+        """Initialize a RWKendo arbitrator.
 
         Args:
         max_processes - the maximum possible number of processes that will run
-        num_locks     - number of locks available to all processes
         debug         - whether or not to be verbose
         priorities    - iterable of thread priorities
         """
@@ -37,7 +38,7 @@ class RWKendo(object):
         # Initialize priorities. By default, every thread has the same
         # priority
         if priorities is None:
-            priorities = [1 for i in xrange(max_processes)]
+            priorities = [1 for _ in xrange(max_processes)]
 
         self.priorities = priorities
 
@@ -80,25 +81,9 @@ class RWKendo(object):
             self.global_lock.acquire()
             if self.try_lock(lock_number, pid):
                 self.global_lock.release()
+                # NOTE: Reader Writer Implementation will not have issue of nested locks as there is only one lock - RWLock.
+                # Naive implementation of Kendo is used
                 break
-                # if self.lrlt_list[lock_number] >= self.clocks[pid]:
-                #     # Atomically release and label lock as not held
-                #     # XXX edge case when starting processes must wait one turn wheen lrlt_list is all zeros
-                #     self.global_lock.acquire()
-                #     if pid in self.readers:
-                #         self.locks[lock_number].done_read()
-                #     else:
-                #         self.locks[lock_number].done_write()
-                #     self.lock_held_list[lock_number] = False
-                #     self.global_lock.release()
-                # else:
-                #     if self.debug:
-                #         self.global_lock.acquire()
-                #         print "Process", pid, "Locking Lock", lock_number
-                #         print "CLOCKS", self.clocks
-                #         print '\n'
-                #         self.global_lock.release()
-                #     break
             else:
                 self.global_lock.release()
 
@@ -195,6 +180,7 @@ class RWKendo(object):
 
         Args:
         process - the process to be run
+        process_type - pass either reader or writer so arbitrator can keep track of reader and writer processes
 
         Returns the PID of the process, None if something went awry.
         """

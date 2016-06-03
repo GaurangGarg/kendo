@@ -1,18 +1,15 @@
 import reader_writer_kendo
+import sys
 
 
 class ReaderProcess(object):
-    """A thread that computes part of a sum."""
+    """A thread that reads from shared data."""
 
     def __init__(self, arbitrator):
-        """Construct a SumProcess.
+        """Construct a ReaderProcess.
 
         Args:
-        arbitrator - the kendo (or other) arbitrator
-        lock_num - lock protecting shared sum
-        nums - iterable of numbers to addup
-        delay_time - time to delay before starting work
-        work_time - simulated time it takes to complete the work
+        arbitrator - the RWkendo arbitrator
         """
 
         self.arbitrator = arbitrator
@@ -26,8 +23,8 @@ class ReaderProcess(object):
         self.pid = arbitrator.register_process(self, "reader")
 
     def run(self):
-        """Run this SumProcess. Add up its numbers and update the total when
-        done.
+        """Run this ReaderProcess.
+        Acquire mutex, read shared data, Release mutex.
         """
 
         print "Reader Process, PID = ", self.pid, " starting..."
@@ -38,24 +35,20 @@ class ReaderProcess(object):
 
         self.arbitrator.det_mutex_unlock(self.pid, 0)
 
-        # FIXME: remove this after the scheduling's fixed
-        self.arbitrator.clocks[self.pid] = 10000
+        # FIXME: Currently aribtrator doesn't remove process after it finishes from its list of processes; Set finished process's logical clock to maxint
+        self.arbitrator.clocks[self.pid] = sys.maxint
 
         print "Reader Process, PID = ", self.pid, " done!"
 
 
-class WriterProcess():
-    """A thread that computes part of a sum."""
+class WriterProcess(object):
+    """A thread that writes to shared data."""
 
     def __init__(self, arbitrator):
-        """Construct a SumProcess.
+        """Construct a WriterProcess.
 
         Args:
-        arbitrator - the kendo (or other) arbitrator
-        lock_num - lock protecting shared sum
-        nums - iterable of numbers to addup
-        delay_time - time to delay before starting work
-        work_time - simulated time it takes to complete the work
+        arbitrator - the RWkendo arbitrator
         """
 
         self.arbitrator = arbitrator
@@ -69,8 +62,8 @@ class WriterProcess():
         self.pid = arbitrator.register_process(self, "writer")
 
     def run(self):
-        """Run this SumProcess. Add up its numbers and update the total when
-        done.
+        """Run this WriterProcess.
+        Acquire mutex, write shared data, Release mutex.
         """
 
         print "Writer Process, PID = ", self.pid, " starting..."
@@ -81,8 +74,8 @@ class WriterProcess():
 
         self.arbitrator.det_mutex_unlock(self.pid, 0)
 
-        # FIXME: remove this after the scheduling's fixed
-        self.arbitrator.clocks[self.pid] = 10000
+        # FIXME: Currently aribtrator doesn't remove process after it finishes from its list of processes; Set finished process's logical clock to maxint
+        self.arbitrator.clocks[self.pid] = sys.maxint
 
         print "Writer Process, PID = ", self.pid, " done!"
 
@@ -91,10 +84,11 @@ if __name__ == "__main__":
 
     print "Testing Reader and Writer Processes"
 
-    kendo_arbitrator = reader_writer_kendo.RWKendo(max_processes=3)
+    kendo_arbitrator = reader_writer_kendo.RWKendo(max_processes=4)
 
     reader1 = ReaderProcess(kendo_arbitrator)
     writer1 = WriterProcess(kendo_arbitrator)
+    writer_2 = WriterProcess(kendo_arbitrator)
     reader2 = ReaderProcess(kendo_arbitrator)
 
     kendo_arbitrator.run()
