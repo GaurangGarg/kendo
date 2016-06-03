@@ -1,7 +1,7 @@
 import reader_writer_kendo
 
 
-class ReaderProcess():
+class ReaderProcess(object):
     """A thread that computes part of a sum."""
 
     def __init__(self, arbitrator):

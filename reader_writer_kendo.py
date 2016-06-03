@@ -80,24 +80,25 @@ class RWKendo(object):
             self.global_lock.acquire()
             if self.try_lock(lock_number, pid):
                 self.global_lock.release()
-                if self.lrlt_list[lock_number] >= self.clocks[pid]:
-                    # Atomically release and label lock as not held
-                    # XXX edge case when starting processes must wait one turn wheen lrlt_list is all zeros
-                    self.global_lock.acquire()
-                    if pid in self.readers:
-                        self.locks[lock_number].done_read()
-                    else:
-                        self.locks[lock_number].done_write()
-                    self.lock_held_list[lock_number] = False
-                    self.global_lock.release()
-                else:
-                    if self.debug:
-                        self.global_lock.acquire()
-                        print "Process", pid, "Locking Lock", lock_number
-                        print "CLOCKS", self.clocks
-                        print '\n'
-                        self.global_lock.release()
-                    break
+                break
+                # if self.lrlt_list[lock_number] >= self.clocks[pid]:
+                #     # Atomically release and label lock as not held
+                #     # XXX edge case when starting processes must wait one turn wheen lrlt_list is all zeros
+                #     self.global_lock.acquire()
+                #     if pid in self.readers:
+                #         self.locks[lock_number].done_read()
+                #     else:
+                #         self.locks[lock_number].done_write()
+                #     self.lock_held_list[lock_number] = False
+                #     self.global_lock.release()
+                # else:
+                #     if self.debug:
+                #         self.global_lock.acquire()
+                #         print "Process", pid, "Locking Lock", lock_number
+                #         print "CLOCKS", self.clocks
+                #         print '\n'
+                #         self.global_lock.release()
+                #     break
             else:
                 self.global_lock.release()
 
